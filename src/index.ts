@@ -23,6 +23,46 @@ function genId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
 }
 
+// ---------- 设置（存 KV） ----------
+interface Settings {
+  retentionDays: number; // 0 = 永久保留
+  dnd: { enabled: boolean; start: number; end: number; tzOffset: number }; // start/end: 距 0 点分钟数（本地）；tzOffset: 本地比 UTC 多的分钟数
+}
+const DEFAULT_SETTINGS: Settings = {
+  retentionDays: 30,
+  dnd: { enabled: false, start: 1320, end: 480, tzOffset: 0 }, // 22:00–08:00
+};
+async function getSettings(env: Env): Promise<Settings> {
+  const raw = await env.KV.get("settings");
+  if (!raw) return { ...DEFAULT_SETTINGS };
+  try {
+    const s = JSON.parse(raw);
+    return { ...DEFAULT_SETTINGS, ...s, dnd: { ...DEFAULT_SETTINGS.dnd, ...(s.dnd || {}) } };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+// 当前是否处于免打扰时段（按用户本地时间）
+function inQuietHours(dnd: Settings["dnd"], nowMs: number): boolean {
+  if (!dnd.enabled || dnd.start === dnd.end) return false;
+  const local = (((Math.floor(nowMs / 60000) + dnd.tzOffset) % 1440) + 1440) % 1440;
+  return dnd.start < dnd.end
+    ? local >= dnd.start && local < dnd.end
+    : local >= dnd.start || local < dnd.end; // 跨午夜
+}
+
+// Cron 清理：删除超过保留期的消息
+async function cleanupOldMessages(env: Env): Promise<number> {
+  const { retentionDays } = await getSettings(env);
+  if (!retentionDays || retentionDays <= 0) return 0;
+  const cutoff = Date.now() - retentionDays * 86400_000;
+  const r = await env.DB.prepare(`DELETE FROM messages WHERE user_id = ? AND created_at < ?`)
+    .bind(OWNER_ID, cutoff)
+    .run();
+  return r.meta.changes ?? 0;
+}
+
 function pushPreview(body: string): string {
   return body
     .replace(/<[^>]+>/g, "")
@@ -74,7 +114,7 @@ async function insertMessage(
   } catch {
     /* 实时失败不阻断落库 */
   }
-  // 一律发 Web Push（移动端 WS 在线状态不可靠，可靠优先；前台由系统/SW 处理）
+  // 发 Web Push（免打扰时段内跳过，但仍入库+实时）
   if (ctx) {
     const payload = {
       title: row.title || "XPush 新消息",
@@ -82,7 +122,13 @@ async function insertMessage(
       id: row.id,
       url: `/?m=${row.id}`,
     };
-    ctx.waitUntil(sendPushToAll(env, OWNER_ID, payload));
+    ctx.waitUntil(
+      (async () => {
+        const s = await getSettings(env);
+        if (inQuietHours(s.dnd, Date.now())) return;
+        await sendPushToAll(env, OWNER_ID, payload);
+      })()
+    );
   }
   return row;
 }
@@ -170,6 +216,24 @@ app.post("/api/v1/messages/:id/read", async (c) => {
     .bind(id, OWNER_ID)
     .run();
   return c.json({ ok: true });
+});
+
+// 删除单条消息
+app.delete("/api/v1/messages/:id", async (c) => {
+  const r = await c.env.DB.prepare(`DELETE FROM messages WHERE id = ? AND user_id = ?`)
+    .bind(c.req.param("id"), OWNER_ID)
+    .run();
+  return c.json({ ok: r.meta.changes > 0 });
+});
+
+// 清空消息：默认全部，?read=1 仅清已读
+app.delete("/api/v1/messages", async (c) => {
+  const readOnly = c.req.query("read") === "1";
+  const sql = readOnly
+    ? `DELETE FROM messages WHERE user_id = ? AND read = 1`
+    : `DELETE FROM messages WHERE user_id = ?`;
+  const r = await c.env.DB.prepare(sql).bind(OWNER_ID).run();
+  return c.json({ ok: true, deleted: r.meta.changes });
 });
 
 // ---------- API：渠道 ----------
@@ -319,6 +383,26 @@ app.post("/api/v1/push/test", async (c) => {
   return c.json({ sent: results.length, results });
 });
 
+// ---------- 设置 ----------
+app.get("/api/v1/settings", async (c) => c.json(await getSettings(c.env)));
+
+app.put("/api/v1/settings", async (c) => {
+  const cur = await getSettings(c.env);
+  const b: Partial<Settings> = await c.req.json().catch(() => ({}));
+  const next: Settings = {
+    retentionDays: typeof b.retentionDays === "number" ? b.retentionDays : cur.retentionDays,
+    dnd: { ...cur.dnd, ...(b.dnd || {}) },
+  };
+  await c.env.KV.put("settings", JSON.stringify(next));
+  return c.json(next);
+});
+
+// 手动触发清理（也可由 Cron 自动执行）
+app.post("/api/v1/settings/cleanup", async (c) => {
+  const deleted = await cleanupOldMessages(c.env);
+  return c.json({ ok: true, deleted });
+});
+
 // ---------- 接入层 ----------
 async function findChannel(env: Env, key: string, type?: ChannelType) {
   let sql = `SELECT * FROM channels WHERE key = ? AND enabled = 1`;
@@ -368,5 +452,10 @@ export default {
       return hub(env).fetch(request);
     }
     return app.fetch(request, env, ctx);
+  },
+
+  // Cron：按保留期自动清理旧消息
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(cleanupOldMessages(env));
   },
 };

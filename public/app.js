@@ -1,6 +1,14 @@
 // XPush PWA — 单用户客户端
 const KEY_STORE = "xpush_key";
+const THEME_STORE = "xpush_theme";
 let masterKey = localStorage.getItem(KEY_STORE) || "";
+
+// 主题：在最早时机应用，避免闪烁
+function applyTheme(t) {
+  if (t && t !== "default") document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+}
+applyTheme(localStorage.getItem(THEME_STORE) || "default");
 let currentTab = "messages";
 let activeFilter = "all";
 let ws = null;
@@ -164,9 +172,48 @@ async function loadMessages() {
   const list = $("#list");
   if (!data.messages.length) { list.innerHTML = `<div class="empty">暂无消息</div>`; return; }
   list.innerHTML = data.messages.map((m) => cardHTML(m)).join("");
-  list.querySelectorAll(".card").forEach((el) =>
-    el.addEventListener("click", () => openDetail(el.dataset.id))
+  list.querySelectorAll(".card").forEach((el) => {
+    attachSwipe(el);
+    el.addEventListener("click", () => {
+      if ((el._x || 0) < -10) { el.style.transition = "transform .2s"; el.style.transform = "translateX(0)"; el._x = 0; return; }
+      openDetail(el.dataset.id);
+    });
+  });
+  list.querySelectorAll(".swipe-del").forEach((el) =>
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (await confirmAction("删除这条消息？", "删除后不可恢复。")) {
+        await api(`/api/v1/messages/${el.dataset.del}`, { method: "DELETE" });
+        toast("已删除");
+        loadMessages();
+      }
+    })
   );
+}
+
+// 左滑显露删除按钮（iOS 风格）
+function attachSwipe(card) {
+  const W = 84;
+  let x0 = 0, y0 = 0, base = 0, axis = null;
+  const setX = (v) => { card.style.transform = `translateX(${v}px)`; card._x = v; };
+  card.addEventListener("touchstart", (e) => {
+    const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; base = card._x || 0; axis = null;
+    card.style.transition = "none";
+  }, { passive: true });
+  card.addEventListener("touchmove", (e) => {
+    const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+    if (axis === null && (Math.abs(mx) > 6 || Math.abs(my) > 6)) axis = Math.abs(mx) > Math.abs(my) ? "x" : "y";
+    if (axis !== "x") return;
+    e.preventDefault();
+    setX(Math.max(-W, Math.min(0, base + mx)));
+  }, { passive: false });
+  const settle = () => {
+    if (axis !== "x") return;
+    card.style.transition = "transform .22s";
+    setX((card._x || 0) < -W / 2 ? -W : 0);
+  };
+  card.addEventListener("touchend", settle, { passive: true });
+  card.addEventListener("touchcancel", settle, { passive: true });
 }
 
 function cardHTML(m) {
@@ -174,12 +221,15 @@ function cardHTML(m) {
   const tag = LEVEL_TAG[m.level] || "";
   const fmtTag = m.format !== "text" ? (tag ? ` · ${m.format}` : m.format) : "";
   const preview = (m.title ? m.title + " — " : "") + stripMd(m.body);
-  return `<div class="card s-${type} ${m.read ? "" : "unread"}" data-id="${m.id}">
-    <div class="src-ico">${ICONS[type] || ICONS.webhook}</div>
-    <div class="body">
-      <div class="row1"><span class="name">${esc(m.channel_name || TYPE_LABEL[type])}</span><span class="time">${relTime(m.created_at)}</span></div>
-      <div class="preview">${esc(preview)}</div>
-      ${(tag || fmtTag) ? `<span class="tag ${m.level}">${esc((tag + fmtTag).trim())}</span>` : ""}
+  return `<div class="swipe-wrap">
+    <button class="swipe-del" data-del="${m.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>删除</button>
+    <div class="card s-${type} ${m.read ? "" : "unread"}" data-id="${m.id}">
+      <div class="src-ico">${ICONS[type] || ICONS.webhook}</div>
+      <div class="body">
+        <div class="row1"><span class="name">${esc(m.channel_name || TYPE_LABEL[type])}</span><span class="time">${relTime(m.created_at)}</span></div>
+        <div class="preview">${esc(preview)}</div>
+        ${(tag || fmtTag) ? `<span class="tag ${m.level}">${esc((tag + fmtTag).trim())}</span>` : ""}
+      </div>
     </div>
   </div>`;
 }
@@ -208,7 +258,8 @@ async function openDetail(id) {
   view.innerHTML = `
     <div class="d-bar">
       <div class="icon-btn" id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
-      <div><div class="name">${esc(m.channel_name || TYPE_LABEL[type])}</div><div class="sub">${fmtDate(m.created_at)} · ${m.format}</div></div>
+      <div style="flex:1;min-width:0"><div class="name">${esc(m.channel_name || TYPE_LABEL[type])}</div><div class="sub">${fmtDate(m.created_at)} · ${m.format}</div></div>
+      <div class="icon-btn" id="detDel" style="color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
     </div>
     <div class="scroll pad">
       <div class="d-hero">
@@ -227,6 +278,13 @@ async function openDetail(id) {
   $("#markRead").onclick = async () => {
     await api(`/api/v1/messages/${id}/read`, { method: "POST" });
     toast("已标为已读");
+  };
+  $("#detDel").onclick = async () => {
+    if (await confirmAction("删除这条消息？", "删除后不可恢复。")) {
+      await api(`/api/v1/messages/${id}`, { method: "DELETE" });
+      toast("已删除");
+      showTab("messages");
+    }
   };
   if (!m.read) api(`/api/v1/messages/${id}/read`, { method: "POST" }).catch(() => {});
 }
@@ -311,6 +369,21 @@ function closeSheet() {
     }, 220);
   }
 }
+// 二次确认（底部弹窗，破坏性操作用）
+function confirmAction(title, desc, okText = "删除") {
+  return new Promise((resolve) => {
+    const bd = openSheet(`
+      <h3>${esc(title)}</h3>
+      <div class="desc">${esc(desc)}</div>
+      <div class="sheet-actions">
+        <div class="btn" id="cCancel">取消</div>
+        <div class="btn-danger" id="cOk">${esc(okText)}</div>
+      </div>`);
+    bd.querySelector("#cCancel").onclick = () => { closeSheet(); resolve(false); };
+    bd.querySelector("#cOk").onclick = () => { closeSheet(); resolve(true); };
+  });
+}
+
 function copyBtn(text) {
   return `<span class="cp" data-copy="${esc(text)}">⧉</span>`;
 }
@@ -380,8 +453,10 @@ async function openChannelSheet(id) {
     toast("密钥已重置"); openChannelSheet(id);
   };
   bd.querySelector("#delBtn").onclick = async () => {
-    await api(`/api/v1/channels/${id}`, { method: "DELETE" });
-    toast("已删除"); closeSheet(); loadChannels();
+    if (await confirmAction("删除该渠道？", "渠道的接入地址将失效；历史消息保留。")) {
+      await api(`/api/v1/channels/${id}`, { method: "DELETE" });
+      toast("渠道已删除"); closeSheet(); loadChannels();
+    }
   };
 }
 
@@ -394,33 +469,118 @@ function howto(c, ep) {
 }
 
 // ---------- 视图：我的 ----------
+const THEMES = [
+  { k: "default", g: "linear-gradient(135deg,#3df0ff,#a06bff)" },
+  { k: "green", g: "linear-gradient(135deg,#3ff0c8,#4fe0ff)" },
+  { k: "aurora", g: "linear-gradient(135deg,#ff90c8,#b06bff)" },
+];
+const pad2 = (n) => String(n).padStart(2, "0");
+const fmtMin = (m) => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
+const parseMin = (s) => { const [h, m] = s.split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+let SETTINGS = { retentionDays: 30, dnd: { enabled: false, start: 1320, end: 480, tzOffset: 0 } };
+
 async function renderMe() {
   const on = await pushEnabled();
   const sub = pushSupported()
     ? (Notification.permission === "denied" ? "已被浏览器拒绝，请到系统设置开启" : on ? "已开启 · Web Push" : "点击开启锁屏推送")
     : "当前环境不支持（iOS 需先添加到主屏幕）";
+  try { SETTINGS = await api("/api/v1/settings"); } catch {}
+  const theme = localStorage.getItem(THEME_STORE) || "default";
+  const dndText = SETTINGS.dnd.enabled ? `${fmtMin(SETTINGS.dnd.start)} – ${fmtMin(SETTINGS.dnd.end)}` : "未开启";
+  const retText = SETTINGS.retentionDays > 0 ? `保留 ${SETTINGS.retentionDays} 天` : "永久保留";
   view.innerHTML = `
     <div class="appbar"><div class="title" style="font-size:20px;">我的</div></div>
     <div class="scroll pad">
       <div class="me-hero"><div class="avatar">U</div><div><div class="nm">owner</div><div class="em">unrealyan@gmail.com</div></div></div>
+
+      <div class="sec-title">外观</div>
+      <div class="set-group">
+        <div class="set-row"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4 12H1M23 12h-3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></div><div class="lab">主题色<small>点击切换</small></div>
+          <div class="swatches">${THEMES.map((t) => `<span class="sw ${t.k === theme ? "on" : ""}" data-theme="${t.k}" style="background:${t.g}"></span>`).join("")}</div>
+        </div>
+      </div>
+
       <div class="sec-title">通知</div>
       <div class="set-group">
         <div class="set-row"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div><div class="lab">推送通知<small id="pushSub">${sub}</small></div><button class="toggle ${on ? "on" : "off"}" id="pushToggle"></button></div>
-        <div class="set-row"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="lab">免打扰<small>22:00 – 08:00</small></div><div class="val">M5 ›</div></div>
+        <div class="set-row tap" id="dndRow"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="lab">免打扰<small>该时段静音推送</small></div><div class="val">${dndText} ›</div></div>
       </div>
+
       <div class="sec-title">数据</div>
       <div class="set-group">
+        <div class="set-row tap" id="retRow"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div><div class="lab">自动清理<small>定时删除过期消息</small></div><div class="val">${retText} ›</div></div>
+        <div class="set-row tap" id="clearMsg"><div class="si" style="color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div><div class="lab">清空所有消息<small>不可恢复</small></div><div class="val">›</div></div>
         <div class="set-row"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div><div class="lab">关于 XPush<small>v1.0 · Powered by Cloudflare</small></div><div class="val">›</div></div>
-        <div class="set-row" id="lockRow"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div><div class="lab">锁定 / 切换密钥</div><div class="val">›</div></div>
+        <div class="set-row tap" id="lockRow"><div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div><div class="lab">锁定 / 切换密钥</div><div class="val">›</div></div>
       </div>
     </div>`;
+
+  view.querySelectorAll(".sw").forEach((el) =>
+    el.addEventListener("click", () => {
+      const t = el.dataset.theme;
+      applyTheme(t);
+      localStorage.setItem(THEME_STORE, t);
+      view.querySelectorAll(".sw").forEach((s) => s.classList.toggle("on", s === el));
+    })
+  );
   $("#pushToggle").onclick = async () => {
     const tg = $("#pushToggle");
     if (tg.classList.contains("on")) { await disablePush(); }
     else { const ok = await enablePush(); if (!ok) return; }
     renderMe();
   };
+  $("#dndRow").onclick = () => openDndSheet();
+  $("#retRow").onclick = () => openRetentionSheet();
+  $("#clearMsg").onclick = async () => {
+    if (await confirmAction("清空所有消息？", "将删除全部历史消息，不可恢复。", "清空")) {
+      const r = await api("/api/v1/messages", { method: "DELETE" });
+      toast(`已清空 ${r.deleted ?? 0} 条`);
+    }
+  };
   $("#lockRow").onclick = () => { localStorage.removeItem(KEY_STORE); masterKey = ""; showGate(); };
+}
+
+function openDndSheet() {
+  const d = SETTINGS.dnd;
+  let enabled = d.enabled;
+  const bd = openSheet(`
+    <h3>免打扰</h3>
+    <div class="desc">该时段内新消息不弹系统通知（消息仍会正常收到、列表照常更新）。</div>
+    <div class="set-row" style="padding:6px 0 14px"><div class="lab">开启免打扰</div><button class="toggle ${enabled ? "on" : "off"}" id="dndTg"></button></div>
+    <div class="field"><label>开始时间</label><input type="time" id="dndStart" value="${fmtMin(d.start)}"></div>
+    <div class="field"><label>结束时间（次日）</label><input type="time" id="dndEnd" value="${fmtMin(d.end)}"></div>
+    <div class="sheet-actions"><div class="btn" id="dndCancel">取消</div><div class="btn primary" id="dndSave">保存</div></div>`);
+  bd.querySelector("#dndTg").onclick = (e) => {
+    enabled = !enabled;
+    e.target.classList.toggle("on", enabled);
+    e.target.classList.toggle("off", !enabled);
+  };
+  bd.querySelector("#dndCancel").onclick = closeSheet;
+  bd.querySelector("#dndSave").onclick = async () => {
+    const dnd = {
+      enabled,
+      start: parseMin(bd.querySelector("#dndStart").value),
+      end: parseMin(bd.querySelector("#dndEnd").value),
+      tzOffset: -new Date().getTimezoneOffset(),
+    };
+    SETTINGS = await api("/api/v1/settings", { method: "PUT", body: JSON.stringify({ dnd }) });
+    toast("已保存"); closeSheet(); renderMe();
+  };
+}
+
+function openRetentionSheet() {
+  const opts = [{ d: 7, t: "保留 7 天" }, { d: 30, t: "保留 30 天" }, { d: 90, t: "保留 90 天" }, { d: 0, t: "永久保留" }];
+  const cur = SETTINGS.retentionDays;
+  const bd = openSheet(`
+    <h3>自动清理</h3>
+    <div class="desc">每天定时删除超过保留期的消息（Cron）。</div>
+    <div>${opts.map((o) => `<div class="opt-row ${o.d === cur ? "on" : ""}" data-d="${o.d}"><span>${o.t}</span><span class="ck">✓</span></div>`).join("")}</div>`);
+  bd.querySelectorAll(".opt-row").forEach((el) =>
+    el.addEventListener("click", async () => {
+      SETTINGS = await api("/api/v1/settings", { method: "PUT", body: JSON.stringify({ retentionDays: Number(el.dataset.d) }) });
+      toast("已保存"); closeSheet(); renderMe();
+    })
+  );
 }
 
 // ---------- Tab 切换 ----------

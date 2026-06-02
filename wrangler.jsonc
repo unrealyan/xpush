@@ -52,7 +52,12 @@
 
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["UserHub"] }
-  ]
+  ],
+
+  // 每天 03:00 UTC 触发自动清理（按设置里的保留期删除旧消息）
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  }
 
   // 主密钥与 VAPID 密钥用 secret 注入（不入库 / 不进配置）：
   //   wrangler secret put XPUSH_MASTER_KEY

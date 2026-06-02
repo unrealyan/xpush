@@ -1,6 +1,6 @@
 # XPush 使用指南
 
-线上地址：`https://xpush.unrealyan.workers.dev`
+线上地址：`https://xpush.ptcl.one`
 主密钥（管理端解锁）：自行保管，勿写进脚本。
 
 ---
@@ -36,20 +36,20 @@
 
 **curl（最常用）**
 ```bash
-curl -X POST https://xpush.unrealyan.workers.dev/w/<KEY> \
+curl -X POST https://xpush.ptcl.one/w/<KEY> \
   -H 'Content-Type: application/json' \
   -d '{"title":"部署完成","body":"**v1.2.0** 已上线 ✅","format":"markdown","level":"success"}'
 ```
 
 **纯文本（非 JSON 也可，自动当正文）**
 ```bash
-curl -X POST https://xpush.unrealyan.workers.dev/w/<KEY> -d '生产环境 CPU 92%，请关注'
+curl -X POST https://xpush.ptcl.one/w/<KEY> -d '生产环境 CPU 92%，请关注'
 ```
 
 **Python**
 ```python
 import requests
-requests.post("https://xpush.unrealyan.workers.dev/w/<KEY>", json={
+requests.post("https://xpush.ptcl.one/w/<KEY>", json={
     "title": "订单告警",
     "body": "新订单 #20260602-8841 已支付 ￥1,299.00",
     "level": "info",
@@ -58,7 +58,7 @@ requests.post("https://xpush.unrealyan.workers.dev/w/<KEY>", json={
 
 **Node.js（18+ 内置 fetch）**
 ```js
-await fetch("https://xpush.unrealyan.workers.dev/w/<KEY>", {
+await fetch("https://xpush.ptcl.one/w/<KEY>", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ title: "构建失败", body: "`main` 分支测试未通过", format: "markdown", level: "urgent" }),
@@ -71,13 +71,13 @@ package main
 import ("bytes"; "net/http")
 func main() {
   body := []byte(`{"title":"巡检","body":"全部节点正常","level":"success"}`)
-  http.Post("https://xpush.unrealyan.workers.dev/w/<KEY>", "application/json", bytes.NewReader(body))
+  http.Post("https://xpush.ptcl.one/w/<KEY>", "application/json", bytes.NewReader(body))
 }
 ```
 
 **Shell 封装（放进 ~/.zshrc 随手推）**
 ```bash
-xpush() { curl -s -X POST https://xpush.unrealyan.workers.dev/w/<KEY> \
+xpush() { curl -s -X POST https://xpush.ptcl.one/w/<KEY> \
   -H 'Content-Type: application/json' \
   -d "{\"title\":\"$1\",\"body\":\"$2\"}" >/dev/null; }
 # 用法： xpush "脚本完成" "备份已上传 R2"
@@ -88,14 +88,14 @@ xpush() { curl -s -X POST https://xpush.unrealyan.workers.dev/w/<KEY> \
 - name: Notify XPush
   if: always()
   run: |
-    curl -X POST https://xpush.unrealyan.workers.dev/w/${{ secrets.XPUSH_KEY }} \
+    curl -X POST https://xpush.ptcl.one/w/${{ secrets.XPUSH_KEY }} \
       -H 'Content-Type: application/json' \
       -d "{\"title\":\"构建 ${{ job.status }}\",\"body\":\"${{ github.repository }} @ ${{ github.sha }}\",\"level\":\"$([ '${{ job.status }}' = 'success' ] && echo success || echo urgent)\"}"
 ```
 
 **HTML 富文本示例**
 ```bash
-curl -X POST https://xpush.unrealyan.workers.dev/w/<KEY> \
+curl -X POST https://xpush.ptcl.one/w/<KEY> \
   -H 'Content-Type: application/json' \
   -d '{"title":"日报","body":"<p>今日处理 <b>128</b> 单</p><ul><li>退款 3</li><li>投诉 1</li></ul>","format":"html"}'
 ```
@@ -107,7 +107,7 @@ curl -X POST https://xpush.unrealyan.workers.dev/w/<KEY> \
 3. 给 Telegram 注册 webhook（把你的 bot 收到的消息转发到 XPush）：
 ```bash
 curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
-  -d "url=https://xpush.unrealyan.workers.dev/tg/<KEY>" \
+  -d "url=https://xpush.ptcl.one/tg/<KEY>" \
   -d "secret_token=<SECRET_TOKEN>"
 ```
 4. 之后任何人给该 bot 发消息、或把 bot 拉群收到的消息，都会同步进 XPush。
@@ -116,7 +116,7 @@ curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
 ### 3) 钉钉 Outgoing 机器人 — `POST /ding/<KEY>`
 
 1. 钉钉群 → 群设置 → **智能群助手 → 添加机器人 → 自定义(Outgoing)**
-2. 「消息接收地址 / POST 地址」填：`https://xpush.unrealyan.workers.dev/ding/<KEY>`
+2. 「消息接收地址 / POST 地址」填：`https://xpush.ptcl.one/ding/<KEY>`
 3. 安全设置勾 **加签**，复制 `SEC` 开头的密钥
 4. 回到 XPush 该渠道，把 `SEC...` 填进「加签密钥」并保存
 5. 在群里 **@机器人** 说话，消息即推进 XPush
@@ -127,7 +127,7 @@ curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
 KEY=<KEY>; SEC=<你在渠道里填的SEC密钥>
 TS=$(node -e 'console.log(Date.now())')
 SIGN=$(node -e "console.log(require('crypto').createHmac('sha256','$SEC').update('$TS\n$SEC').digest('base64'))")
-curl -X POST "https://xpush.unrealyan.workers.dev/ding/$KEY" \
+curl -X POST "https://xpush.ptcl.one/ding/$KEY" \
   -H "timestamp: $TS" -H "sign: $SIGN" \
   -d '{"text":{"content":"钉钉加签测试 ✅"},"senderNick":"张三","conversationTitle":"运维群"}'
 ```
@@ -138,7 +138,7 @@ curl -X POST "https://xpush.unrealyan.workers.dev/ding/$KEY" \
 
 ```bash
 # 用种子 webhook 渠道发一条紧急 markdown
-curl -X POST https://xpush.unrealyan.workers.dev/w/ax9fk2demo \
+curl -X POST https://xpush.ptcl.one/w/ax9fk2demo \
   -H 'Content-Type: application/json' \
   -d '{"title":"通路测试","body":"# 收到就说明链路通了\n- 实时刷新\n- 锁屏推送","format":"markdown","level":"urgent"}'
 ```

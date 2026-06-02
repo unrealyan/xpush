@@ -76,7 +76,7 @@ curl -X POST https://<your-worker>/w/<channelKey> \
 - [x] **M2** 富文本正式渲染：markdown-it + highlight.js + DOMPurify（vendor 于 `public/vendor/`，离线可用）
 - [x] **M3** 接入层：Telegram（secret_token 校验）/ 钉钉（HMAC 加签校验）协议解析 + 渠道增删改/启停/重置/复制 UI
 - [x] **M4** 实时 & 推送：DO 扇出 + Web Push(VAPID, RFC8291 aes128gcm，纯 Web Crypto) + 通知授权/引导 + 离线扇出
-- [ ] **M5** 设置：免打扰时段 + 自动清理(Cron Triggers) + 主题切换落地
+- [x] **M5** 设置：免打扰时段（推送静音）+ 自动清理（Cron Triggers，每天 03:00 UTC）+ 主题切换（青蓝紫/青绿/粉紫）
 
 ### VAPID 密钥生成（M4）
 

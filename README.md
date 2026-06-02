@@ -13,6 +13,12 @@
 [![Web Push](https://img.shields.io/badge/Web%20Push-VAPID%20%C2%B7%20aes128gcm-a06bff?style=flat-square)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3ee6a0?style=flat-square)](LICENSE)
 
+<br/><br/>
+
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/unrealyan/xpush">
+  <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare" height="36" />
+</a>
+
 </div>
 
 ---
@@ -67,7 +73,33 @@
 | 前端 | 原生 JS PWA + markdown-it + highlight.js + DOMPurify（无打包步骤，vendor 自托管） |
 | 部署 | **Wrangler** |
 
-## 🚀 快速开始
+## ⚡ 一键部署到 Cloudflare
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/unrealyan/xpush)
+
+点击按钮，Cloudflare 会自动：克隆仓库到你的 Git → 创建并绑定 **D1 / KV / Durable Object** → 构建并部署 Worker。
+
+> 把按钮链接里的 `unrealyan/xpush` 换成你自己的仓库地址。
+
+部署完成后，再补两步（按钮无法自动设置密钥与 D1 表结构）：
+
+```bash
+# 1) 应用 D1 表结构（在你本地 clone 的仓库里执行）
+npx wrangler d1 migrations apply xpush-db --remote
+
+# 2) 设置 Secrets（也可在 Dashboard → Worker → Settings → Variables and Secrets 里添加）
+npx wrangler secret put XPUSH_MASTER_KEY          # 解锁主密钥，自定义强口令
+npx web-push generate-vapid-keys                  # 生成下面两个 VAPID 值
+npx wrangler secret put VAPID_PUBLIC_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put VAPID_SUBJECT             # 形如 mailto:you@example.com
+```
+
+完成后访问分配的 `*.workers.dev` 域名，输入主密钥解锁即可。
+
+---
+
+## 🚀 手动部署（CLI）
 
 > 前置：Node 18+、一个 Cloudflare 账户、`npm i -g wrangler` 并 `wrangler login`。
 
@@ -144,7 +176,7 @@ design/            # 视觉稿与设计方案
 - [x] **M2** 富文本正式渲染（markdown-it + highlight.js + DOMPurify）
 - [x] **M3** 接入层协议与签名校验 · 渠道增删改 UI
 - [x] **M4** 实时扇出 · Web Push(VAPID) · 通知引导
-- [ ] **M5** 免打扰时段 · Cron 自动清理 · 主题切换落地
+- [x] **M5** 免打扰时段 · Cron 自动清理 · 主题切换
 
 ## 🤝 贡献
 

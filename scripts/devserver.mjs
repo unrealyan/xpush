@@ -17,6 +17,7 @@ const channels = [
   { id: "ch_ding", type: "dingtalk", name: "运维告警群", key: "dingdemo01", secret: "SECdemoxxxxxxx", enabled: 0, created_at: now },
 ];
 const rid = (n = 16) => Array.from({ length: n }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("");
+const settings = { retentionDays: 30, dnd: { enabled: false, start: 1320, end: 480, tzOffset: 0 } };
 const messages = [
   { id: "m1", channel_id: "ch_ding", channel_name: "运维告警群", channel_type: "dingtalk", title: "生产环境 CPU 告警",
     body: "检测到 `prod-east` 集群多个节点 CPU 使用率持续 **超过 90%**，已自动触发扩容流程。\n\n### 受影响节点\n\n| 节点 | CPU | 状态 |\n|------|-----|------|\n| node-07 | 94% | 扩容中 |\n| node-12 | 91% | 扩容中 |\n\n### 处理建议\n- 检查近 10 分钟流量是否异常\n- 确认扩容实例是否就绪\n\n```\nkubectl get pods -n prod-east --watch\n```",
@@ -53,14 +54,14 @@ http.createServer(async (req, res) => {
       return json(res, 200, { ok: key === KEY });
     }
     if (!authed(req)) return json(res, 401, { error: "unauthorized" });
-    if (p === "/api/v1/messages") {
+    if (p === "/api/v1/messages" && req.method === "GET") {
       const ch = url.searchParams.get("channel");
       let list = messages;
       if (ch && ch !== "all") list = messages.filter((m) => m.channel_id === ch || m.channel_type === ch);
       return json(res, 200, { messages: list, unread: unread() });
     }
     const mDetail = p.match(/^\/api\/v1\/messages\/([^/]+)$/);
-    if (mDetail) {
+    if (mDetail && req.method === "GET") {
       const m = messages.find((x) => x.id === mDetail[1]);
       return m ? json(res, 200, { message: m }) : json(res, 404, { error: "not found" });
     }
@@ -68,6 +69,20 @@ http.createServer(async (req, res) => {
     if (mRead && req.method === "POST") {
       const m = messages.find((x) => x.id === mRead[1]); if (m) m.read = 1;
       return json(res, 200, { ok: true });
+    }
+    if (p === "/api/v1/messages" && req.method === "DELETE") {
+      const readOnly = url.searchParams.get("read") === "1";
+      let n = 0;
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (!readOnly || messages[i].read) { messages.splice(i, 1); n++; }
+      }
+      return json(res, 200, { ok: true, deleted: n });
+    }
+    const mDel = p.match(/^\/api\/v1\/messages\/([^/]+)$/);
+    if (mDel && req.method === "DELETE") {
+      const i = messages.findIndex((x) => x.id === mDel[1]);
+      if (i >= 0) messages.splice(i, 1);
+      return json(res, 200, { ok: i >= 0 });
     }
     if (p === "/api/v1/channels" && req.method === "GET") {
       return json(res, 200, { channels: channels.map((c) => ({
@@ -111,6 +126,15 @@ http.createServer(async (req, res) => {
       return json(res, 200, { key: ch.key, secret: ch.secret });
     }
     if (p === "/api/v1/push/vapid") return json(res, 200, { publicKey: null });
+    if (p === "/api/v1/settings" && req.method === "GET") return json(res, 200, settings);
+    if (p === "/api/v1/settings" && req.method === "PUT") {
+      let bd = ""; for await (const c of req) bd += c;
+      const b = JSON.parse(bd || "{}");
+      if (typeof b.retentionDays === "number") settings.retentionDays = b.retentionDays;
+      if (b.dnd) settings.dnd = { ...settings.dnd, ...b.dnd };
+      return json(res, 200, settings);
+    }
+    if (p === "/api/v1/settings/cleanup" && req.method === "POST") return json(res, 200, { ok: true, deleted: 0 });
     return json(res, 404, { error: "no route" });
   }
   if (p === "/ws") { res.writeHead(501); return res.end(); }
