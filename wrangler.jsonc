@@ -1,0 +1,62 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xpush",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+
+  // 版本元数据：每次部署自动变化的 version id，用于前端热更新探测
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+
+  // 同一个 Worker 既托管 PWA 静态资源，又处理 API。
+  // /api/* 与实时/接入端点先进 Worker，其余静态资源直接由 assets 提供。
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/w/*",
+      "/tg/*",
+      "/ding/*",
+      "/ws"
+    ]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "xpush-db",
+      "database_id": "925329c9-c0de-4c1f-b580-1b582fa2d972",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "1cbef76f8a554cbab4f14be9e40d0d51"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "USER_HUB", "class_name": "UserHub" }
+    ]
+  },
+
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["UserHub"] }
+  ]
+
+  // 主密钥与 VAPID 密钥用 secret 注入（不入库 / 不进配置）：
+  //   wrangler secret put XPUSH_MASTER_KEY
+  //   wrangler secret put VAPID_PUBLIC_KEY
+  //   wrangler secret put VAPID_PRIVATE_KEY
+  //   wrangler secret put VAPID_SUBJECT
+}

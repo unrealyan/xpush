@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#06080f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="XPush">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/vendor/hljs-github-dark.css">
+<link rel="stylesheet" href="/styles.css">
+<title>XPush</title>
+</head>
+<body>
+  <div id="app" class="safe-top">
+    <!-- 解锁门 -->
+    <div id="gate" class="gate hidden">
+      <div class="ob-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#04101a" stroke-width="2.5"><path d="M4 4l16 16M20 4L4 20"/></svg></div>
+      <h2>X P U S H</h2>
+      <p>输入主密钥以解锁</p>
+      <input id="gateKey" type="password" placeholder="Master Key" autocomplete="off">
+      <div id="gateErr" class="err"></div>
+      <button id="gateBtn" class="cta">解锁</button>
+    </div>
+
+    <!-- 主内容由 app.js 渲染 -->
+    <div id="view" style="display:flex;flex-direction:column;flex:1;min-height:0;"></div>
+
+    <!-- 底部导航 -->
+    <nav id="nav" class="nav hidden">
+      <button class="n on" data-tab="messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>消息</button>
+      <button class="n" data-tab="channels">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3 3m3-3l3 3M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>渠道</button>
+      <button class="n" data-tab="me">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>我的</button>
+    </nav>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <!-- 富文本渲染依赖（classic 脚本，先于 module app.js 执行，暴露全局）-->
+  <script src="/vendor/markdown-it.min.js"></script>
+  <script src="/vendor/purify.min.js"></script>
+  <script src="/vendor/highlight.min.js"></script>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

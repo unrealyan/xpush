@@ -1,0 +1,28 @@
+{
+  "name": "xpush",
+  "version": "1.0.0",
+  "private": true,
+  "description": "统一消息推送接收 · 移动端 PWA · Cloudflare 全栈",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply xpush-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply xpush-db --remote",
+    "db:seed:local": "wrangler d1 execute xpush-db --local --file=./scripts/seed.sql",
+    "db:seed:remote": "wrangler d1 execute xpush-db --remote --file=./scripts/seed.sql",
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@highlightjs/cdn-assets": "^11.11.1",
+    "dompurify": "^3.4.7",
+    "hono": "^4.6.14",
+    "markdown-it": "^14.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.0.0"
+  }
+}

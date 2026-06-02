@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XPush · 视觉设计稿</title>
+<style>
+  :root{
+    --bg:#06080f;
+    --bg-2:#0a0e1a;
+    --panel:rgba(18,24,40,.72);
+    --panel-2:rgba(24,32,52,.6);
+    --line:rgba(120,160,255,.10);
+    --line-2:rgba(120,160,255,.18);
+    --txt:#e8ecf6;
+    --txt-2:#9aa6c4;
+    --txt-3:#5e6a8a;
+    --cyan:#3df0ff;
+    --blue:#5b8bff;
+    --violet:#a06bff;
+    --green:#3ee6a0;
+    --amber:#ffb547;
+    --pink:#ff6b9d;
+    --glow:0 0 24px rgba(61,240,255,.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  body{
+    font-family:-apple-system,"SF Pro Display","Helvetica Neue","PingFang SC",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(91,139,255,.10), transparent 60%),
+      radial-gradient(1000px 700px at 110% 10%, rgba(160,107,255,.10), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:48px 24px 80px;
+    gap:14px;
+  }
+  .head{text-align:center;margin-bottom:18px;}
+  .head h1{
+    font-size:30px;font-weight:700;letter-spacing:6px;
+    background:linear-gradient(90deg,var(--cyan),var(--blue),var(--violet));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .head p{color:var(--txt-3);font-size:13px;letter-spacing:2px;margin-top:8px;}
+  .stage{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+  .label{position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:3px;color:var(--txt-3);white-space:nowrap;}
+
+  /* phone frame */
+  .phone{
+    position:relative;
+    width:340px;height:720px;
+    border-radius:42px;
+    background:linear-gradient(160deg,#11friction,#0a0e1a);
+    background:linear-gradient(160deg,#141a2c,#080b14);
+    padding:12px;
+    box-shadow:
+      0 0 0 2px rgba(120,160,255,.08),
+      0 40px 80px -20px rgba(0,0,0,.8),
+      inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .screen{
+    position:relative;width:100%;height:100%;
+    border-radius:32px;overflow:hidden;
+    background:linear-gradient(180deg,var(--bg-2),var(--bg));
+    display:flex;flex-direction:column;
+  }
+  /* notch */
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#05070d;border-radius:0 0 16px 16px;z-index:50;}
+
+  /* status bar */
+  .status{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 8px;font-size:12px;color:var(--txt-2);font-weight:600;}
+  .status .dots{display:flex;gap:5px;align-items:center;}
+
+  /* top app bar */
+  .appbar{padding:8px 20px 14px;display:flex;align-items:center;justify-content:space-between;}
+  .appbar .title{font-size:22px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:9px;}
+  .logo-mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;box-shadow:var(--glow);}
+  .logo-mark svg{width:15px;height:15px;}
+  .appbar .actions{display:flex;gap:14px;color:var(--txt-2);}
+  .icon-btn{width:34px;height:34px;border-radius:11px;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .icon-btn svg{width:17px;height:17px;}
+
+  /* filter chips */
+  .chips{display:flex;gap:8px;padding:0 20px 14px;overflow:hidden;}
+  .chip{font-size:12px;padding:7px 14px;border-radius:20px;background:var(--panel-2);border:1px solid var(--line);color:var(--txt-2);white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .chip.active{background:linear-gradient(135deg,rgba(61,240,255,.18),rgba(91,139,255,.18));border-color:var(--line-2);color:var(--cyan);box-shadow:0 0 16px rgba(61,240,255,.15);}
+  .chip .badge{background:rgba(255,107,157,.9);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;}
+
+  /* list */
+  .list{flex:1;overflow:hidden;padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+  .card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:14px 14px 14px 16px;
+    display:flex;gap:12px;
+    backdrop-filter:blur(12px);
+    overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px;}
+  .card.unread::after{content:"";position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);}
+  .card.s-webhook::before{background:linear-gradient(var(--cyan),var(--blue));}
+  .card.s-api::before{background:linear-gradient(var(--green),var(--cyan));}
+  .card.s-tg::before{background:linear-gradient(var(--blue),var(--violet));}
+  .card.s-ding::before{background:linear-gradient(var(--amber),var(--pink));}
+
+  .src-ico{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-2);}
+  .src-ico svg{width:20px;height:20px;}
+  .s-webhook .src-ico{background:rgba(61,240,255,.10);color:var(--cyan);}
+  .s-api .src-ico{background:rgba(62,230,160,.10);color:var(--green);}
+  .s-tg .src-ico{background:rgba(91,139,255,.10);color:var(--blue);}
+  .s-ding .src-ico{background:rgba(255,181,71,.10);color:var(--amber);}
+
+  .card .body{flex:1;min-width:0;}
+  .card .row1{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
+  .card .name{font-size:14px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .card .time{font-size:11px;color:var(--txt-3);flex-shrink:0;}
+  .card .preview{font-size:12.5px;color:var(--txt-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .card .tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:6px;margin-top:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--txt-3);}
+  .tag.warn{color:var(--amber);border-color:rgba(255,181,71,.3);background:rgba(255,181,71,.08);}
+  .tag.ok{color:var(--green);border-color:rgba(62,230,160,.3);background:rgba(62,230,160,.08);}
+
+  /* bottom nav */
+  .nav{display:flex;justify-content:space-around;padding:10px 0 22px;border-top:1px solid var(--line);background:rgba(8,11,20,.6);backdrop-filter:blur(10px);}
+  .nav .n{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--txt-3);}
+  .nav .n.on{color:var(--cyan);}
+  .nav .n svg{width:21px;height:21px;}
+
+  /* ---- detail screen ---- */
+  .d-bar{padding:8px 18px 12px;display:flex;align-items:center;gap:14px;}
+  .d-bar .name{font-size:15px;font-weight:600;}
+  .d-bar .sub{font-size:11px;color:var(--txt-3);}
+  .d-hero{margin:0 16px 16px;padding:16px;border-radius:18px;border:1px solid var(--line-2);
+    background:linear-gradient(135deg,rgba(91,139,255,.12),rgba(160,107,255,.06));position:relative;overflow:hidden;}
+  .d-hero::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(61,240,255,.25),transparent 70%);}
+  .d-hero .htag{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+  .d-hero .pill{font-size:11px;padding:3px 9px;border-radius:8px;background:rgba(91,139,255,.18);color:var(--blue);border:1px solid rgba(91,139,255,.3);}
+  .d-hero h2{font-size:18px;font-weight:700;line-height:1.4;margin-bottom:6px;}
+  .d-hero .meta{font-size:11px;color:var(--txt-3);}
+  .d-content{flex:1;overflow:hidden;padding:0 16px;font-size:13px;line-height:1.7;color:var(--txt-2);}
+  .d-content h3{color:var(--txt);font-size:14px;margin:14px 0 8px;display:flex;align-items:center;gap:7px;}
+  .d-content h3::before{content:"";width:3px;height:14px;background:var(--cyan);border-radius:2px;}
+  .d-content p{margin-bottom:10px;}
+  .d-content code{background:rgba(120,160,255,.12);color:var(--cyan);padding:1px 6px;border-radius:5px;font-size:12px;font-family:"SF Mono",monospace;}
+  .codeblock{background:#05070d;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:"SF Mono",monospace;font-size:11.5px;line-height:1.6;color:#8fb3ff;margin:10px 0;overflow:hidden;}
+  .codeblock .k{color:var(--violet);}
+  .codeblock .s{color:var(--green);}
+  .d-content ul{margin:0 0 10px 18px;}
+  .d-content li{margin-bottom:5px;}
+  .d-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
+  .d-table th,.d-table td{border:1px solid var(--line);padding:7px 10px;text-align:left;}
+  .d-table th{background:var(--panel-2);color:var(--txt);}
+  .d-actions{padding:14px 16px 24px;display:flex;gap:10px;border-top:1px solid var(--line);}
+  .btn{flex:1;padding:12px;border-radius:13px;font-size:13px;font-weight:600;text-align:center;border:1px solid var(--line-2);background:var(--panel-2);color:var(--txt-2);}
+  .btn.primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04101a;border:none;box-shadow:var(--glow);}
+
+  .caption{color:var(--txt-3);font-size:12px;text-align:center;max-width:340px;line-height:1.6;margin-top:4px;}
+
+  /* ---- channel mgmt ---- */
+  .sec-title{padding:6px 20px;font-size:12px;letter-spacing:2px;color:var(--txt-3);}
+  .ch-list{flex:1;overflow:hidden;padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+  .ch-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(12px);}
+  .ch-top{display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+  .ch-top .src-ico{width:36px;height:36px;border-radius:11px;}
+  .ch-top .nm{font-size:14px;font-weight:600;flex:1;}
+  .ch-top .nm small{display:block;font-size:11px;color:var(--txt-3);font-weight:400;margin-top:2px;}
+  .toggle{width:42px;height:24px;border-radius:14px;position:relative;flex-shrink:0;}
+  .toggle.on{background:linear-gradient(90deg,var(--cyan),var(--blue));box-shadow:0 0 12px rgba(61,240,255,.3);}
+  .toggle.off{background:rgba(120,160,255,.12);}
+  .toggle::after{content:"";position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;}
+  .toggle.on::after{right:3px;} .toggle.off::after{left:3px;background:#5e6a8a;}
+  .ep{display:flex;align-items:center;gap:8px;background:#05070d;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:"SF Mono",monospace;font-size:11px;color:var(--cyan);}
+  .ep .u{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ep .cp{color:var(--txt-3);}
+  .ch-foot{display:flex;justify-content:space-between;margin-top:9px;font-size:11px;color:var(--txt-3);}
+  .add-btn{margin:6px 14px 0;padding:13px;border-radius:14px;border:1px dashed var(--line-2);text-align:center;font-size:13px;color:var(--cyan);background:rgba(61,240,255,.04);}
+
+  /* ---- onboarding ---- */
+  .ob{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 28px;text-align:center;gap:6px;}
+  .ob-logo{width:78px;height:78px;border-radius:22px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;box-shadow:var(--glow);margin-bottom:8px;}
+  .ob-logo svg{width:40px;height:40px;}
+  .ob h2{font-size:21px;font-weight:700;letter-spacing:1px;}
+  .ob p{font-size:13px;color:var(--txt-2);line-height:1.6;margin-bottom:14px;}
+  .ob-step{width:100%;display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;text-align:left;}
+  .ob-step .n{width:26px;height:26px;border-radius:8px;background:rgba(91,139,255,.15);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+  .ob-step .t{font-size:12.5px;color:var(--txt);} .ob-step .t small{display:block;color:var(--txt-3);font-size:11px;margin-top:2px;}
+  .ob-cta{width:100%;margin-top:16px;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04101a;font-weight:700;font-size:14px;text-align:center;box-shadow:var(--glow);}
+
+  /* ---- settings ---- */
+  .me-hero{margin:4px 16px 16px;padding:16px;border-radius:18px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:14px;}
+  .avatar{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--violet),var(--blue));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;}
+  .me-hero .info .nm{font-size:16px;font-weight:600;} .me-hero .info .em{font-size:12px;color:var(--txt-3);margin-top:3px;}
+  .set-group{margin:0 16px 14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .set-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);}
+  .set-row:last-child{border-bottom:none;}
+  .set-row .si{width:30px;height:30px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0;}
+  .set-row .si svg{width:15px;height:15px;}
+  .set-row .lab{flex:1;font-size:13.5px;} .set-row .lab small{display:block;color:var(--txt-3);font-size:11px;margin-top:2px;}
+  .set-row .val{font-size:12px;color:var(--txt-3);}
+  .swatches{display:flex;gap:7px;}
+  .sw{width:18px;height:18px;border-radius:6px;} .sw.on{outline:2px solid #fff;outline-offset:1px;}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>X P U S H</h1>
+    <p>统一消息推送接收 · PWA · Cloudflare</p>
+  </div>
+
+  <div class="stage">
+    <!-- ============ SCREEN 1: LIST ============ -->
+    <div style="position:relative;">
+      <div class="label">消息列表</div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="status">
+          <span>9:41</span>
+          <span class="dots">📶 &nbsp;🔋</span>
+        </div>
+        <div class="appbar">
+          <div class="title">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#04101a" stroke-width="2.5"><path d="M4 4l16 16M20 4L4 20"/></svg></span>
+            消息
+          </div>
+          <div class="actions">
+            <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></div>
+            <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"/></svg></div>
+          </div>
+        </div>
+        <div class="chips">
+          <div class="chip active">全部 <span class="badge">5</span></div>
+          <div class="chip">Webhook</div>
+          <div class="chip">API</div>
+          <div class="chip">Telegram</div>
+          <div class="chip">钉钉</div>
+        </div>
+        <div class="list">
+
+          <div class="card s-ding unread">
+            <div class="src-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 5.8 2 10.5c0 2.7 1.5 5.1 3.8 6.6-.2.8-.8 2.3-.9 2.6 0 0 0 .3.2.4.2 0 4-1.6 4.6-1.9.7.1 1.5.2 2.3.2 5.5 0 10-3.8 10-8.5S17.5 2 12 2z"/></svg></div>
+            <div class="body">
+              <div class="row1"><span class="name">钉钉 · 运维告警群</span><span class="time">刚刚</span></div>
+              <div class="preview">🔴 生产环境 CPU 使用率持续超过 90%，已触发自动扩容...</div>
+              <span class="tag warn">紧急 · markdown</span>
+            </div>
+          </div>
+
+          <div class="card s-webhook unread">
+            <div class="src-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 9a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 2.8 4M15 18a3 3 0 1 0 4-2.8M9 6L6.5 11M15 18l-2.5-5M18 9l-5 2.5"/></svg></div>
+            <div class="body">
+              <div class="row1"><span class="name">GitHub Webhook</span><span class="time">2 分钟前</span></div>
+              <div class="preview">✅ Deploy to production succeeded · commit a1b9f3c by @unrealyan</div>
+              <span class="tag ok">部署成功 · html</span>
+            </div>
+          </div>
+
+          <div class="card s-tg">
+            <div class="src-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.3L2.5 11.6c-1 .4-1 1.7.1 2l4.8 1.5 1.8 5.7c.2.7 1.1.9 1.6.3l2.6-2.6 4.9 3.6c.6.4 1.4.1 1.6-.6l3.3-15.5c.2-.9-.7-1.6-1.4-1.3z"/></svg></div>
+            <div class="body">
+              <div class="row1"><span class="name">Telegram · 价格监控Bot</span><span class="time">14:05</span></div>
+              <div class="preview">📈 BTC 突破 $72,000，24h 涨幅 +5.2%。监控规则「BTC-高位」已命中。</div>
+              <span class="tag">行情提醒</span>
+            </div>
+          </div>
+
+          <div class="card s-api">
+            <div class="src-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m0 8v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3m0-8V5a2 2 0 0 0-2-2h-3"/><path d="M7 12h10M12 7v10" stroke-width="1.5"/></svg></div>
+            <div class="body">
+              <div class="row1"><span class="name">REST API · 订单系统</span><span class="time">13:48</span></div>
+              <div class="preview">新订单 #20260602-8841 已支付，金额 ￥1,299.00，来自客户「李雷」。</div>
+              <span class="tag">业务通知</span>
+            </div>
+          </div>
+
+          <div class="card s-webhook">
+            <div class="src-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 9a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 2.8 4M15 18a3 3 0 1 0 4-2.8M9 6L6.5 11M15 18l-2.5-5M18 9l-5 2.5"/></svg></div>
+            <div class="body">
+              <div class="row1"><span class="name">CI Pipeline</span><span class="time">昨天</span></div>
+              <div class="preview">单元测试通过 412/412，覆盖率 87.3%。构建产物已上传至 R2。</div>
+              <span class="tag ok">测试通过</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="nav">
+          <div class="n on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>消息</div>
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3 3m3-3l3 3M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>渠道</div>
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>我的</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ SCREEN 2: DETAIL ============ -->
+    <div style="position:relative;">
+      <div class="label">消息详情（富文本）</div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="status">
+          <span>9:41</span>
+          <span class="dots">📶 &nbsp;🔋</span>
+        </div>
+        <div class="d-bar">
+          <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div>
+            <div class="name">钉钉 · 运维告警群</div>
+            <div class="sub">2026-06-02 09:40 · markdown</div>
+          </div>
+        </div>
+        <div class="d-hero">
+          <div class="htag">
+            <span class="pill">🔴 紧急告警</span>
+          </div>
+          <h2>生产环境 CPU 告警</h2>
+          <div class="meta">来源 IP 10.0.3.12 · 集群 prod-east · 触发规则 cpu&gt;90%</div>
+        </div>
+        <div class="d-content">
+          <p>检测到 <code>prod-east</code> 集群多个节点 CPU 使用率持续 <strong style="color:var(--amber)">超过 90%</strong>，已自动触发扩容流程。</p>
+          <h3>受影响节点</h3>
+          <table class="d-table">
+            <tr><th>节点</th><th>CPU</th><th>状态</th></tr>
+            <tr><td>node-07</td><td>94%</td><td>扩容中</td></tr>
+            <tr><td>node-12</td><td>91%</td><td>扩容中</td></tr>
+          </table>
+          <h3>处理建议</h3>
+          <ul>
+            <li>检查近 10 分钟流量是否异常</li>
+            <li>确认扩容实例是否就绪</li>
+          </ul>
+          <div class="codeblock"><span class="k">kubectl</span> get pods <span class="k">-n</span> prod-east <span class="s">--watch</span></div>
+        </div>
+        <div class="d-actions">
+          <div class="btn">标为已读</div>
+          <div class="btn primary">查看监控面板</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ SCREEN 3: CHANNELS ============ -->
+    <div style="position:relative;">
+      <div class="label">渠道管理</div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span class="dots">📶 &nbsp;🔋</span></div>
+        <div class="appbar"><div class="title" style="font-size:20px;">渠道接入</div>
+          <div class="actions"><div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div></div>
+        </div>
+        <div class="sec-title">已接入 4</div>
+        <div class="ch-list">
+          <div class="ch-card s-webhook">
+            <div class="ch-top">
+              <div class="src-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 9a3 3 0 1 0-2.8-4M6 15a3 3 0 1 0 2.8 4M15 18a3 3 0 1 0 4-2.8M9 6L6.5 11M15 18l-2.5-5M18 9l-5 2.5"/></svg></div>
+              <div class="nm">GitHub Webhook<small>通用 Webhook · POST JSON</small></div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="ep"><span class="u">https://xpush.dev/w/ax9f...k2</span><span class="cp">⧉</span></div>
+            <div class="ch-foot"><span>今日 12 条</span><span>最近 2 分钟前</span></div>
+          </div>
+          <div class="ch-card s-tg">
+            <div class="ch-top">
+              <div class="src-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.3L2.5 11.6c-1 .4-1 1.7.1 2l4.8 1.5 1.8 5.7c.2.7 1.1.9 1.6.3l2.6-2.6 4.9 3.6c.6.4 1.4.1 1.6-.6l3.3-15.5c.2-.9-.7-1.6-1.4-1.3z"/></svg></div>
+              <div class="nm">价格监控 Bot<small>Telegram Bot · @xpush_price_bot</small></div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="ep"><span class="u">Token ····························Yc8</span><span class="cp">⧉</span></div>
+            <div class="ch-foot"><span>今日 5 条</span><span>最近 14:05</span></div>
+          </div>
+          <div class="ch-card s-ding">
+            <div class="ch-top">
+              <div class="src-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 5.8 2 10.5c0 2.7 1.5 5.1 3.8 6.6-.2.8-.8 2.3-.9 2.6 0 0 0 .3.2.4.2 0 4-1.6 4.6-1.9.7.1 1.5.2 2.3.2 5.5 0 10-3.8 10-8.5S17.5 2 12 2z"/></svg></div>
+              <div class="nm">运维告警群<small>钉钉机器人 · 加签校验</small></div>
+              <div class="toggle off"></div>
+            </div>
+            <div class="ch-foot" style="margin-top:2px;"><span style="color:var(--amber);">已暂停接收</span><span>最近 09:40</span></div>
+          </div>
+        </div>
+        <div class="add-btn">＋ 新建渠道（API / Webhook / Telegram / 钉钉）</div>
+        <div class="nav">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>消息</div>
+          <div class="n on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3 3m3-3l3 3M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>渠道</div>
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>我的</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ SCREEN 4: PWA ONBOARDING ============ -->
+    <div style="position:relative;">
+      <div class="label">PWA 安装 / 通知引导</div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span class="dots">📶 &nbsp;🔋</span></div>
+        <div class="ob">
+          <div class="ob-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#04101a" stroke-width="2.5"><path d="M4 4l16 16M20 4L4 20"/></svg></div>
+          <h2>开启实时推送</h2>
+          <p>把 XPush 添加到主屏幕，并允许通知，<br>即可在锁屏第一时间收到消息。</p>
+          <div class="ob-step"><div class="n">1</div><div class="t">添加到主屏幕<small>Safari 分享 → 添加到主屏幕</small></div></div>
+          <div class="ob-step"><div class="n">2</div><div class="t">允许通知权限<small>用于 Web Push 实时送达</small></div></div>
+          <div class="ob-step"><div class="n">3</div><div class="t">接入你的第一个渠道<small>复制 Webhook / API 地址即可</small></div></div>
+          <div class="ob-cta">允许通知并开始</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ============ SCREEN 5: SETTINGS / ME ============ -->
+    <div style="position:relative;">
+      <div class="label">设置 / 我的</div>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span class="dots">📶 &nbsp;🔋</span></div>
+        <div class="appbar"><div class="title" style="font-size:20px;">我的</div></div>
+        <div class="me-hero">
+          <div class="avatar">U</div>
+          <div class="info"><div class="nm">unrealyan</div><div class="em">unrealyan@gmail.com</div></div>
+        </div>
+        <div class="sec-title">外观</div>
+        <div class="set-group">
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4 12H1M23 12h-3"/></svg></div>
+            <div class="lab">主题色<small>青蓝紫 · 科幻</small></div>
+            <div class="swatches"><span class="sw on" style="background:linear-gradient(135deg,#3df0ff,#a06bff)"></span><span class="sw" style="background:linear-gradient(135deg,#3ee6a0,#3df0ff)"></span><span class="sw" style="background:linear-gradient(135deg,#5b8bff,#fff)"></span></div>
+          </div>
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></div>
+            <div class="lab">深色模式</div><div class="toggle on"></div>
+          </div>
+        </div>
+        <div class="sec-title">通知</div>
+        <div class="set-group">
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+            <div class="lab">推送通知<small>Web Push 已开启</small></div><div class="toggle on"></div>
+          </div>
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="lab">免打扰<small>22:00 – 08:00 静音</small></div><div class="val">已开启 ›</div>
+          </div>
+        </div>
+        <div class="sec-title">数据</div>
+        <div class="set-group">
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+            <div class="lab">自动清理<small>保留最近 30 天</small></div><div class="val">30 天 ›</div>
+          </div>
+          <div class="set-row">
+            <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></div>
+            <div class="lab">关于 XPush<small>v1.0 · Powered by Cloudflare</small></div><div class="val">›</div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>消息</div>
+          <div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3 3m3-3l3 3M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>渠道</div>
+          <div class="n on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>我的</div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <p class="caption">暗色科幻基调 · 玻璃拟态卡片 · 渠道色彩编码（青/绿/蓝/琥珀）· 霓虹高光 · 详情支持 HTML / Markdown 富文本渲染</p>
+</body>
+</html>
